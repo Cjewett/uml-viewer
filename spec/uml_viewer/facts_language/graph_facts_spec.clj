@@ -13,13 +13,24 @@
 (def fixture-dir "spec/resources/facts")
 (def fixture-file "spec/resources/facts/.metrics/graph.edn")
 
-(defn- temp-facts [doc]
+(defn- temp-text [text]
   (let [dir (io/file (System/getProperty "java.io.tmpdir")
                      (str "uml-facts-" (System/nanoTime)))
         f (io/file dir ".metrics" "graph.edn")]
     (io/make-parents f)
-    (spit f (pr-str doc))
+    (spit f text)
     dir))
+
+(defn- temp-facts [doc]
+  (temp-text (pr-str doc)))
+
+(defn- failure
+  "The message `read-facts` throws for `src`, or nil."
+  [src]
+  (try
+    (facts/read-facts src)
+    nil
+    (catch Exception e (ex-message e))))
 
 (defn- scan [src prefix]
   (graph/scan (graph/lookup :facts) src {:prefix prefix}))
@@ -46,8 +57,18 @@
              (.getCanonicalFile (facts/find-facts-file "spec/resources/facts/src/Shop/Order.cs"))))
 
   (it "refuses a missing file and an unknown version"
-    (should-throw (facts/read-facts "spec/resources/no-such-dir"))
-    (should-throw (facts/read-facts (temp-facts {:version 2 :classes [] :edges []})))))
+    (should (str/starts-with? (failure "spec/resources/no-such-dir") "facts file not found: "))
+    (should (str/starts-with? (failure (temp-facts {:version 2 :classes [] :edges []}))
+                              "unsupported facts version 2 in ")))
+
+  (it "tells a file that is not a facts map from one it cannot parse"
+    (let [empty-dir (temp-text "")
+          vector-dir (temp-text "[1 2 3]")
+          broken-dir (temp-text "{:version 1 :classes [")]
+      (should (str/starts-with? (failure empty-dir) "not a facts file: "))
+      (should (str/starts-with? (failure vector-dir) "not a facts file: "))
+      (should (str/starts-with? (failure broken-dir) "cannot read facts file "))
+      (should (str/includes? (failure broken-dir) "graph.edn")))))
 
 (describe "facts graph"
   (it "is registered as :facts"

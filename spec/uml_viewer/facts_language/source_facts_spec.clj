@@ -56,6 +56,28 @@
         (should= 4 (:line found))
         (should= 3 (:line ctor)))))
 
+  (it "parses the facts file again only when it changes"
+    (let [dir (io/file (System/getProperty "java.io.tmpdir")
+                       (str "uml-facts-cache-" (System/nanoTime)))
+          src (io/file dir "src" "Box.cs")
+          facts-file (io/file dir ".metrics" "graph.edn")
+          facts-at (fn [line]
+                     (pr-str {:version 1
+                              :classes [{:id "Box" :name "Box" :ns "" :file "src/Box.cs"
+                                         :ops [{:name "Open" :line line :file "src/Box.cs"}]}]
+                              :edges []}))
+          box {:lang :facts :ns "Box" :file (.getPath src) :name "Open"}]
+      (io/make-parents src)
+      (io/make-parents facts-file)
+      (spit src "class Box\n{\n    public void Open() { }\n    public void Open(int n) { }\n}\n")
+      (spit facts-file (facts-at 3))
+      (should= 3 (:line (source-facts/recorded-op box)))
+      (should= 3 (:line (source-facts/recorded-op box)))
+      (let [stamp (.lastModified facts-file)]
+        (spit facts-file (facts-at 4))
+        (.setLastModified facts-file (+ stamp 2000)))
+      (should= 4 (:line (source-facts/recorded-op box)))))
+
   (it "maps CLR metadata names back to source names"
     (should= "Total" (source-facts/source-name "Shop.Order" "get_Total"))
     (should= "Total" (source-facts/source-name "Shop.Order" "set_Total"))

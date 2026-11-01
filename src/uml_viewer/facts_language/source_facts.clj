@@ -23,12 +23,27 @@
       (str/starts-with? member "op_") "operator"
       :else member)))
 
+(defonce ^:private parsed (atom {}))
+
+(defn- facts-at
+  "The facts document in `file`, parsed once per last-modified time.
+  Nil when it cannot be read."
+  [file]
+  (let [path (.getCanonicalPath (io/file file))
+        stamp (.lastModified (io/file file))
+        hit (get @parsed path)]
+    (if (and hit (= stamp (:stamp hit)))
+      (:doc hit)
+      (let [doc (try (facts/read-facts file) (catch Exception _ nil))]
+        (swap! parsed assoc path {:stamp stamp :doc doc})
+        doc))))
+
 (defn recorded-op
   "The op the nearest facts file records for `ident`, with its file
   resolved, when that file exists. Nil otherwise."
   [ident]
   (when-let [file (facts/find-facts-file (:file ident))]
-    (let [doc (try (facts/read-facts file) (catch Exception _ nil))
+    (let [doc (facts-at file)
           base (facts/base-dir file)
           c (some #(when (= (str (:ns ident)) (str (:id %))) %) (:classes doc))
           op (some #(when (= (str (:name ident)) (str (:name %))) %) (:ops c))

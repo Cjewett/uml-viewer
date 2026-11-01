@@ -28,14 +28,27 @@
       (.getParentFile dir)
       (.getCanonicalFile (io/file (or (System/getProperty "user.dir") "."))))))
 
+(defn- parse-facts
+  "EDN in `f`, or an exception that names the file."
+  [f]
+  (try
+    (edn/read-string (slurp f))
+    (catch Exception e
+      (throw (ex-info (str "cannot read facts file " (.getPath f) ": " (ex-message e))
+                      {:path (.getPath f)}
+                      e)))))
+
 (defn read-facts
-  "The facts document at `src`. Throws when the file is missing or its
-  `:version` is not one this reader knows."
+  "The facts document at `src`. Throws when the file is missing, is not
+  EDN, is not a map (an empty file included), or has a `:version` this
+  reader does not know."
   [src]
   (let [f (facts-file src)]
     (when-not (.isFile f)
       (throw (ex-info (str "facts file not found: " (.getPath f)) {:src src})))
-    (let [doc (edn/read-string (slurp f))]
+    (let [doc (parse-facts f)]
+      (when-not (map? doc)
+        (throw (ex-info (str "not a facts file: " (.getPath f)) {:src src})))
       (when-not (= supported-version (:version doc))
         (throw (ex-info (str "unsupported facts version " (pr-str (:version doc))
                              " in " (.getPath f))

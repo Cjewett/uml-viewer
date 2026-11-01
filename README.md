@@ -543,7 +543,10 @@ graph id and keeps the full name as `:ns`, so the overlay joins each
 class to its own snapshot. Classes carry `:lang :facts`, so the facts
 extractor opens them. `:stereotype :enum` becomes `:enumeration`;
 `:interface` and `:abstract` pass through. `:ops` keep one entry per
-name with its `:line` and `:file`. `:foreign true` classes keep their
+name. The IR keeps each op's member text and the overlay's metrics;
+the class card does not pass `:line` or `:file` on, so the facts
+extractor re-reads the facts file for them (parsed once per change).
+`:foreign true` classes keep their
 ids, and the policy `:foreign` list collapses or drops them as it does
 for every scanner. Edges to ids the file does not list are dropped. A
 source entry's `:prefix` is ignored: the names are already whole.
