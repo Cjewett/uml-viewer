@@ -515,6 +515,39 @@ project name. `list[Animal]` is not. Public module-level functions and
 classes are `:ops`. A module whose public classes are only `Protocol` or
 `ABC` bases, with no public functions, is `:stereotype :interface`.
 
+**Facts** (`uml-viewer.facts-language.graph-facts`) parses nothing. It
+reads a facts file another tool wrote from its own compiler, so a
+language with no scanner here can still be drawn. `:src` is the file, or
+a directory that holds `.metrics/graph.edn`. Paths in the file are
+relative to the parent of its `.metrics` directory (else to the working
+directory). `ub`, the ub-mode tool for .NET, writes one for C# with
+`ub graph`, from the Roslyn semantic model:
+
+```edn
+{:version 1
+ :lang :csharp
+ :root "samples/Showcase"
+ :classes [{:id "Showcase.Domain.Order" :name "Order" :ns "Showcase.Domain"
+            :lang :csharp :file "src/Showcase.Domain/Order.cs"
+            :files ["src/Showcase.Domain/Order.cs" "src/Showcase.Domain/Order.Pricing.cs"]
+            :ops [{:name "get_Total" :line 68 :file "src/Showcase.Domain/Order.cs"}]}
+           {:id "System.IDisposable" :name "System.IDisposable"
+            :ns "System.IDisposable" :foreign true}]
+ :edges [{:from "Showcase.Domain.Order" :to "Showcase.Domain.Money" :kind :dependency}
+         {:from "Showcase.Domain.Resource" :to "System.IDisposable" :kind :implements}]}
+```
+
+A class `:id` is the full name the CRAP and mutation snapshots use as
+`:namespace`. The scanner strips the policy `:prefix` from it for the
+graph id and keeps the full name as `:ns`, so the overlay joins each
+class to its own snapshot. Classes carry `:lang :facts`, so the facts
+extractor opens them. `:stereotype :enum` becomes `:enumeration`;
+`:interface` and `:abstract` pass through. `:ops` keep one entry per
+name with its `:line` and `:file`. `:foreign true` classes keep their
+ids, and the policy `:foreign` list collapses or drops them as it does
+for every scanner. Edges to ids the file does not list are dropped. A
+source entry's `:prefix` is ignored: the names are already whole.
+
 `merge-scans` links a TypeScript `invoke("read_text")` to the Rust class
 that owns `#[tauri::command] fn read_text`, as a `:dependency`. Two
 project classes with the same id are an error. When a dependency and an
@@ -657,6 +690,13 @@ exported declaration, the `fn`, or the `def`. The class card passes
 `:lang` and `:file` from the class. A class with no `:lang` still uses
 the Clojure extractor that Main passes in. The protocol is the seam; do
 not special-case languages in the class card.
+
+**Facts** (`uml-viewer.facts-language.source-facts`) finds the nearest
+`.metrics/graph.edn` above `:file`, looks up the class by `:ns` and the
+op by name, and opens the op's recorded `:file` at its `:line` (a
+partial C# class keeps members in several files). Without a record it
+searches `:file` for the source name: `get_Total` is `Total`, `.ctor`
+is the class name.
 
 Quil stays in `adapters.draw` and `adapters.sketch`. The rest of the engine
 does not depend on Processing.

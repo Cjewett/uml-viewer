@@ -1,0 +1,55 @@
+{:version 1
+ :lang :csharp
+ :root "."
+ :classes [{:id "Shop.IPriced"
+            :name "IPriced"
+            :ns "Shop"
+            :stereotype :interface
+            :lang :csharp
+            :file "src/Shop/IPriced.cs"
+            :files ["src/Shop/IPriced.cs"]
+            :ops [{:name "get_Total", :line 5, :file "src/Shop/IPriced.cs"}]}
+           {:id "Shop.Money"
+            :name "Money"
+            :ns "Shop"
+            :lang :csharp
+            :file "src/Shop/Money.cs"
+            :files ["src/Shop/Money.cs"]
+            :ops [{:name ".ctor", :line 3, :file "src/Shop/Money.cs"}
+                  {:name "get_Zero", :line 5, :file "src/Shop/Money.cs"}]}
+           {:id "Shop.Order"
+            :name "Order"
+            :ns "Shop"
+            :lang :csharp
+            :file "src/Shop/Order.cs"
+            :files ["src/Shop/Order.cs" "src/Shop/Order.Pricing.cs"]
+            :ops [{:name "get_Total", :line 10, :file "src/Shop/Order.cs"}
+                  {:name "Count", :line 16, :file "src/Shop/Order.cs"}
+                  {:name "Dispose", :line 18, :file "src/Shop/Order.cs"}
+                  {:name "Price", :line 5, :file "src/Shop/Order.Pricing.cs"}
+                  {:name "Price", :line 6, :file "src/Shop/Order.Pricing.cs"}]}
+           {:id "Shop.Order.Line"
+            :name "Line"
+            :ns "Shop"
+            :lang :csharp
+            :file "src/Shop/Order.cs"
+            :files ["src/Shop/Order.cs"]
+            :ops [{:name "get_Amount", :line 22, :file "src/Shop/Order.cs"}]}
+           {:id "Shop.Tier"
+            :name "Tier"
+            :ns "Shop"
+            :stereotype :enum
+            :lang :csharp
+            :file "src/Shop/Tier.cs"
+            :files ["src/Shop/Tier.cs"]
+            :ops []}
+           {:id "System.Collections", :name "System.Collections", :ns "System.Collections", :foreign true}
+           {:id "System.IDisposable", :name "System.IDisposable", :ns "System.IDisposable", :foreign true}]
+ :edges [{:from "Shop.IPriced", :to "Shop.Money", :kind :dependency}
+         {:from "Shop.Order", :to "Shop.IPriced", :kind :implements}
+         {:from "Shop.Order", :to "Shop.Money", :kind :dependency}
+         {:from "Shop.Order", :to "Shop.Order.Line", :kind :dependency}
+         {:from "Shop.Order", :to "Shop.Tier", :kind :dependency}
+         {:from "Shop.Order", :to "System.Collections", :kind :dependency}
+         {:from "Shop.Order", :to "System.IDisposable", :kind :implements}
+         {:from "Shop.Order.Line", :to "Shop.Money", :kind :dependency}]}
